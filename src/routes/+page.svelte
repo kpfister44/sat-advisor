@@ -1,7 +1,9 @@
 <script lang="ts">
     import type { PageServerData } from './$types';
+    import { states } from '$lib/states';
     import {
         Form,
+        ComboBox,
         NumberInput,
         FormGroup,
         Slider,
@@ -13,25 +15,31 @@
     } from "carbon-components-svelte";
   
     export let data: PageServerData
-  
-    const states: string[] = ['Alabama','Alaska','American Samoa','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Federated States of Micronesia','Florida','Georgia','Guam','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Marshall Islands','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Northern Mariana Islands','Ohio','Oklahoma','Oregon','Palau','Pennsylvania','Puerto Rico','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virgin Island','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
+    // items holds the info from the states array in the format need to be used by the ComboBox component
+    const items = states.map((state, index) => ({ id: index.toString(), text: state }));
+    
+    function shouldFilterItem(item: { text: string }, value: string): boolean {
+        if (!value) return true;
+        return item.text.toLowerCase().includes(value.toLowerCase());
+    }
+
 
 
 </script>
 <div class="form-flex-container">
-    <div>
+    <div class="title-container">
         <h1>College Assistant Tool</h1>
         <h2>{data.page_server_data.message}</h2>
     </div>
     
     <Form on:submit>
         <FormGroup legendText="Location">
-            <Select selected={states[0]}>
-                {#each states as state}
-                <SelectItem text={state} />
-                {/each}
-            </Select>
-        </FormGroup>
+            <ComboBox
+                placeholder="Select a state"
+                items={items}
+                {shouldFilterItem}
+            />
+          </FormGroup>
         <FormGroup legendText="Academic Information">
         <Slider 
             labelText="SAT Score"
@@ -51,7 +59,7 @@
         />
         </FormGroup>
         <FormGroup legendText="Financial Aid Importance">
-        <RadioButtonGroup name="financial-aid-importance">
+        <RadioButtonGroup name="financial-aid-importance"selected="3">
             <RadioButton id="importance-1" value="1" labelText="1 - Not important at all" />
             <RadioButton id="importance-2" value="2" labelText="2" />
             <RadioButton id="importance-3" value="3" labelText="3" />
@@ -59,11 +67,16 @@
             <RadioButton id="importance-5" value="5" labelText="5 - Very important in my choice" />
         </RadioButtonGroup>
         </FormGroup>
-        <Button type="submit">Submit</Button>    
+        <div class="submit-button-container">
+            <Button type="submit">Submit</Button> 
+        </div>   
     </Form>
 </div>
 
 <style>
+.title-container {
+    margin: 15px;
+}
 .form-flex-container {
     display: flex;
     justify-content: center;
@@ -74,6 +87,19 @@
     flex-direction: column;
     border-radius: 20px;
     box-sizing: border-box;
+}
+.submit-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:global(.bx--btn) {
+    text-align: center;
+    padding: 15px 45px;
+    border-radius: 10px;
+}
+:global(.bx--slider-text-input) {
+    width: 5rem;
 }
 
 </style>
