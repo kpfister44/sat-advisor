@@ -36,6 +36,14 @@
 		third: ''
 	};
 
+	interface TableRow {
+		id: string;
+		percentile: string;
+		score: string;
+	}
+
+	let tableData: TableRow[] = [];
+
 	// items holds the info from the states array in the format need to be used by the ComboBox component
 	const items = states.map((state, index) => ({ id: index.toString(), text: state }));
 
@@ -71,7 +79,6 @@
 		if (schools.length < 3) {
 			return null;
 		}
-		console.log(schools);
 
 		// Return an object with the first three college names extracted
 		return {
@@ -83,13 +90,36 @@
 
 	$: if (form?.status === 200) {
 		showForm = false;
-		gptMessage = form?.body.apiResponse.message.content ?? '';
+		gptMessage = form.body?.apiResponse?.message?.content ?? '';
 		recommendations = extractSchoolRecommendations(gptMessage) ?? {
 			first: '',
 			second: '',
 			third: ''
 		};
-	}
+		  // Only attempt to update tableData if satData is not null or undefined
+		  if (form.body.satData) {
+			tableData = [
+			{
+				id: 'user', // This can be any unique identifier
+				percentile: form.body.satData.user_percentile,
+				score: form.body.satData.total_score.toString()
+			}
+			// You can add other rows here if necessary
+			];
+		} else {
+			// Display a default message if satData is null
+			tableData = [
+				{
+					id: 'default',
+					percentile: 'Data unavailable',
+					score: 'N/A'
+				}
+        	];
+		}
+			console.log(form.body.satData);
+		}
+
+
 </script>
 
 <Header company="Pfister Corp." platformName="SAT Assistant" bind:isSideNavOpen>
@@ -175,38 +205,7 @@
 									{ key: 'percentile', value: 'Percentile' },
 									{ key: 'score', value: 'Score' }
 								]}
-								rows={[
-									{
-										id: 'a',
-										percentile: '95th',
-										score: '1500'
-									},
-									{
-										id: 'b',
-										percentile: '75th',
-										score: '1300'
-									},
-									{
-										id: 'c',
-										percentile: '50th',
-										score: '1000'
-									},
-									{
-										id: 'd',
-										percentile: '35th',
-										score: '900'
-									},
-									{
-										id: 'e',
-										percentile: '20th',
-										score: '800'
-									},
-									{
-										id: 'f',
-										percentile: '5th',
-										score: '650'
-									}
-								]}
+								 rows={tableData}
 							/>
 						</Tile>
 						<Tile>
