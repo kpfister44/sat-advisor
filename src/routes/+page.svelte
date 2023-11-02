@@ -28,8 +28,9 @@
 
 	let showForm = true;
 	let isSideNavOpen = false;
+	// Holds the OPENAI API response message which will be displayed as the "Advice"
 	let gptMessage: string = '';
-	// Initialize an object with empty strings
+	// Initialize an object with empty strings. This object will eventually hold the school recommendations from the OPEN AI API call
 	let recommendations: schoolRecommendations = {
 		first: '',
 		second: '',
@@ -40,8 +41,10 @@
 		id: string;
 		percentile: string;
 		score: string;
+		name: string;
 	}
 
+	// An array that of TableRows pulled from the db query based on the user's sat score input
 	let tableData: TableRow[] = [];
 
 	// items holds the info from the states array in the format need to be used by the ComboBox component
@@ -55,6 +58,7 @@
 		event.preventDefault();
 		showForm = false; // Hide the form
 	}
+	
 	interface schoolRecommendations {
 		first: string;
 		second: string;
@@ -87,7 +91,7 @@
 			third: schools[2] // Third college name
 		};
 	}
-
+	// Reactive check to see if form submission was successful
 	$: if (form?.status === 200) {
 		showForm = false;
 		gptMessage = form.body?.apiResponse?.message?.content ?? '';
@@ -96,28 +100,57 @@
 			second: '',
 			third: ''
 		};
+		console.log(form.body.satData)
 		  // Only attempt to update tableData if satData is not null or undefined
 		  if (form.body.satData) {
 			tableData = [
-			{
-				id: 'user', // This can be any unique identifier
-				percentile: form.body.satData.user_percentile,
-				score: form.body.satData.total_score.toString()
-			}
-			// You can add other rows here if necessary
+				{
+				id: 'above-user-score', 
+				percentile: form.body.satData.higher?.user_percentile ?? 'Unavailable',
+				score: form.body.satData.higher?.total_score?.toString() ?? 'N/A',
+				name: ''
+				},
+				{
+				id: 'user', 
+				percentile: form.body.satData.exact?.user_percentile ?? 'Unavailable',
+				score: form.body.satData.exact?.total_score?.toString() ?? 'N/A',
+				name: 'Your SAT Score'
+				},
+				{
+				id: 'below-user-score', 
+				percentile: form.body.satData.lower?.user_percentile ?? 'Unavailable',
+				score: form.body.satData.lower?.total_score?.toString() ?? 'N/A',
+				name: '',
+				}
+				// ... Additional entries for the average scores of recommended schools
+			// {
+			// 	id: 'school-one-average-score', 
+			// 	percentile: form.body.satData.user_percentile,
+			// 	score: form.body.satData.total_score.toString()
+			// },
+			// {
+			// 	id: 'school-two-average-score', 
+			// 	percentile: form.body.satData.user_percentile,
+			// 	score: form.body.satData.total_score.toString()
+			// },
+			// {
+			// 	id: 'school-three-average-score', 
+			// 	percentile: form.body.satData.user_percentile,
+			// 	score: form.body.satData.total_score.toString()
+			// }
 			];
 		} else {
 			// Display a default message if satData is null
 			tableData = [
 				{
 					id: 'default',
+					name: 'N/A',
 					percentile: 'Data unavailable',
 					score: 'N/A'
 				}
         	];
 		}
-			console.log(form.body.satData);
-		}
+	}
 
 
 </script>
@@ -160,6 +193,7 @@
 									maxLabel="1600"
 									fullWidth
 									value={1000}
+									step={10}
 								/>
 								<NumberInput
 									name="gpa"
@@ -191,29 +225,26 @@
 						</Form>
 					</div>
 				{:else}
-					<h1>This is where the results will display!</h1>
 					{#if form?.status === 200}
-						<p>
-							This message is ephemeral; it exists because the page was rendered in response to a
-							form submission. It will vanish if the user reloads.
-						</p>
-						<p>Successfully logged in!</p>
-						<p>Here is your advice:</p>
-						<Tile>
-							<DataTable
-								headers={[
-									{ key: 'percentile', value: 'Percentile' },
-									{ key: 'score', value: 'Score' }
-								]}
-								 rows={tableData}
-							/>
-						</Tile>
-						<Tile>
-							<h2>Recommended Schools:</h2>
-							<p class="tile-content">{recommendations.first}</p>
-							<p class="tile-content">{recommendations.second}</p>
-							<p class="tile-content">{recommendations.third}</p>
-						</Tile>
+						<div class="top-tiles-container">
+							<Tile>
+								<h2>Recommended Schools:</h2>
+								<p class="tile-content">{recommendations.first}</p>
+								<p class="tile-content">{recommendations.second}</p>
+								<p class="tile-content">{recommendations.third}</p>
+							</Tile>
+							<Tile>
+								<DataTable
+									sortable
+									headers={[
+										{ key: 'percentile', value: 'Percentile' },
+										{ key: 'score', value: 'Score' },
+										{ key: 'name', value: 'Name' },
+									]}
+									rows={tableData}
+								/>
+							</Tile>
+						</div>
 						<Tile>
 							<h2>Advice</h2>
 							<p class="tile-content">{gptMessage}</p>
@@ -228,6 +259,11 @@
 <style>
 	.title-container {
 		margin: 15px;
+	}
+	.top-tiles-container {
+		display: flex;
+		justify-content: center; 
+		flex-wrap: wrap;  
 	}
 	.form-flex-container {
 		display: flex;
@@ -261,7 +297,9 @@
 		flex-direction: column; /* if you want to center vertically as well */
 	}
 	:global(.bx--tile) {
-		margin: 20px;
+		flex: 1;
+		margin: 10px; 
+		min-width: 300px;
 	}
 	:global(.bx--tile h2) {
 		margin-bottom: 20px;

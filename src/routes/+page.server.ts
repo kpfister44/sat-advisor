@@ -15,54 +15,70 @@ type SatData = {
   nat_rep_percentile: string;
   user_percentile: string;
 };
-type SQLiteMasterRow = {
-  type: string;
-  name: string; // this is the table name
-  // You can include more properties here as needed, based on your query
+
+interface ExtendedSatData {
+  exact: SatData | null;
+  higher: SatData | null;
+  lower: SatData | null;
+}
+
+async function getSatData(totalScore: number): Promise<ExtendedSatData | null> {
+	return new Promise((resolve, reject) => {
+		const db = new Database('./db/mydb.sqlite', (dbErr) => {
+			if (dbErr) {
+				console.error('Connection Error:', dbErr.message);
+				reject(dbErr);
+				return;
+			}
+
+			// Prepare the final result object
+			const result: ExtendedSatData = { exact: null, higher: null, lower: null };
+
+			// Query for the exact SAT data
+      const exactQuery = 'SELECT * FROM sat_scores WHERE total_score = ?';
+      console.log(`Running exact query with score: ${totalScore}`);
+      db.get(exactQuery, [totalScore], (exactErr, exactRow: SatData | undefined) => {
+        if (exactErr) {
+          console.error('Exact Query Error:', exactErr.message);
+          db.close();
+          reject(exactErr);
+          return;
+        }
+        result.exact = exactRow || null;
+
+        // Determine the scores to query for higher and lower
+        const higherScore = totalScore > 1500 ? 1600 : totalScore + 100;
+        const lowerScore = totalScore < 500 ? 400 : totalScore - 100;
+
+        // Query for SAT data 100 points higher or max score
+        const higherQuery = 'SELECT * FROM sat_scores WHERE total_score = ?';
+        db.get(higherQuery, [higherScore], (higherErr, higherRow: SatData | undefined) => {
+          if (higherErr) {
+            console.error('Higher Query Error:', higherErr.message);
+          } else {
+            result.higher = higherRow || null;
+          }
+
+          // Query for SAT data 100 points lower or min score
+          const lowerQuery = 'SELECT * FROM sat_scores WHERE total_score = ?';
+          db.get(lowerQuery, [lowerScore], (lowerErr, lowerRow: SatData | undefined) => {
+            db.close();
+            if (lowerErr) {
+              console.error('Lower Query Error:', lowerErr.message);
+            } else {
+              result.lower = lowerRow || null;
+            }
+
+            // Resolve the promise with all the gathered data
+            resolve(result);
+          });
+        });
+      });
+		});
+	});
 };
 
 
-async function getSatData(totalScore: number): Promise<SatData | null> {
-  return new Promise((resolve, reject) => {
-    const db = new Database('./db/mydb.sqlite', (dbErr) => {
-      if (dbErr) {
-        console.error('Connection Error:', dbErr.message);
-        reject(dbErr);
-        return;
-      }
-
-      // Log to console after successfully connecting to the database
-      console.log('Successfully connected to the database.');
-
-      // Check if the 'sat_scores' table exists
-      db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='sat_scores';", [], (err, row: SQLiteMasterRow | undefined) => {
-        if (err) {
-          console.error('Error fetching table:', err.message);
-          reject(err);
-        } else if (row) {
-          console.log('Table exists:', row.name);
-
-          // If the table exists, proceed to query for the specific SAT data
-          const query = 'SELECT * FROM sat_scores WHERE total_score = ?';
-          db.get(query, [totalScore], (queryErr, satRow: SatData | undefined) => {
-            db.close();
-
-            if (queryErr) {
-              console.error('Query Error:', queryErr.message);
-              reject(queryErr);
-            } else {
-              resolve(satRow || null);
-            }
-          });
-        } else {
-          console.log('Table does not exist.');
-          db.close();
-          resolve(null); // Resolve with null if the table doesn't exist
-        }
-      });
-    });
-  });
-}
 
 
 // Function to process form data
