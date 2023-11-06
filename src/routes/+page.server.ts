@@ -87,12 +87,18 @@ async function processFormData(event: RequestEvent) {
   const state = formData.get('state');
   const satScore = Number(formData.get('satScore'));
   const gpa = formData.get('gpa');
+  const intendedMajor = formData.get('major')
+  const schoolSizePreference = formData.get('school-size')
+  const proximityToHomeImportance = formData.get('proximity-importance')
   const financialAidImportance = formData.get('financial-aid-importance');
   
   return {
     state,
     satScore,
     gpa,
+    intendedMajor,
+    schoolSizePreference,
+    proximityToHomeImportance,
     financialAidImportance
   };
 }
@@ -103,9 +109,7 @@ export const actions: Actions = {
     try {
       const formData = await processFormData(event);
       const satData = await getSatData(formData.satScore);
-
-      const userMessage = `I'm from ${formData.state}, my SAT score is ${formData.satScore}, my GPA is ${formData.gpa}, and financial aid is ${formData.financialAidImportance} important to me. What are my college options?`;
-
+      const userMessage = `I'm from ${formData.state}, and staying close to home is ${formData.proximityToHomeImportance} to me. My SAT score is ${formData.satScore}, my GPA is ${formData.gpa}, I'm interested in majoring in ${formData.intendedMajor}, and I have a ${formData.schoolSizePreference} school preference. Financial aid importance is ${formData.financialAidImportance}. Can you suggest colleges that fit my preferences?`;
       console.time('OpenAI API Request');
       const apiResponse: OpenAIResponse = await makeOpenAIRequest(userMessage);
       console.timeEnd('OpenAI API Request');

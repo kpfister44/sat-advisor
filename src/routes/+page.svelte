@@ -2,8 +2,7 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { states } from '$lib/states';
 	import {
-		Select,
-		SelectItem,
+		// Importing UI components from Carbon
 		Form,
 		ComboBox,
 		NumberInput,
@@ -25,33 +24,41 @@
 		DataTable
 	} from 'carbon-components-svelte';
 
+	// Props passed from the server
 	export let data: PageServerData;
 	export let form: ActionData;
 
+	// UI state variables
 	let showForm = true;
 	let isSideNavOpen = false;
-	// Holds the OPENAI API response message which will be displayed as the "Advice"
+
+	// API response state
 	let gptMessage: string = '';
-	// Initialize an object with empty strings. This object will eventually hold the school recommendations from the OPEN AI API call
-	let recommendations: schoolRecommendations = {
+
+	// Interface for school recommendations
+	interface SchoolRecommendations {
+		first: string;
+		second: string;
+		third: string;
+	}
+
+	let recommendations: SchoolRecommendations = {
 		first: '',
 		second: '',
 		third: ''
 	};
 
+	// Interface for table rows representing SAT score data
 	interface TableRow {
 		id: string;
 		percentile: string;
 		score: string;
 		name: string;
 	}
-
-	// An array that of TableRows pulled from the db query based on the user's sat score input
 	let tableData: TableRow[] = [];
 
-	// items holds the info from the states array in the format need to be used by the ComboBox component
+	// Data transformation for ComboBox items
 	const stateItems = states.map((state, index) => ({ id: index.toString(), text: state }));
-
 	const majors = [
 		{ id: 'undecided', text: 'Undecided' },
 		{ id: 'computer-science', text: 'Computer Science' },
@@ -64,23 +71,33 @@
 		{ id: 'psychology', text: 'Psychology' }
 	];
 
+	/**
+	 * Determines if a ComboBox item should be shown based on the user's input.
+	 * This is a case-insensitive comparison function.
+	 * When the user's input is empty, all items are considered a match.
+	 * Otherwise, an item is considered a match if its text includes the input value.
+	 * 
+	 * @param {object} item - The item from the ComboBox list.
+	 * @param {string} item.text - The display text of the item used for matching.
+	 * @param {string} value - The user's current input used for filtering the list.
+	 * @return {boolean} - True if the item should be displayed, false otherwise.
+	 */
+
 	function shouldFilterItem(item: { text: string }, value: string): boolean {
+		// Show all items when the input box is cleared by the user
 		if (!value) return true;
+		// Check if the item's text includes the user's input, ignoring case sensitivity
 		return item.text.toLowerCase().includes(value.toLowerCase());
 	}
+
+	// Form submission handling
 	function handleSubmit(event: Event): void {
 		event.preventDefault();
 		showForm = false; // Hide the form
 	}
 
-	interface schoolRecommendations {
-		first: string;
-		second: string;
-		third: string;
-	}
-
-	// Function to extract college recommendations from a given message
-	function extractSchoolRecommendations(gptMessage: string): schoolRecommendations | null {
+	// Extracting school recommendations from the GPT message
+	function extractSchoolRecommendations(gptMessage: string): SchoolRecommendations | null {
 		// Regular expression to find patterns like "1 - College Name", stopping at a comma, period or the start of a new sentence
 		const recommendationPattern = /(\d) - ([^,.]+[^\s,.])/g;
 		let match;
@@ -105,8 +122,10 @@
 			third: schools[2] // Third college name
 		};
 	}
-	// Reactive check to see if form submission was successful
+
+	// Reactive statement to handle form submission results
 	$: if (form?.status === 200) {
+		// Update UI based on successful submission
 		showForm = false;
 		gptMessage = form.body?.apiResponse?.message?.content ?? '';
 		recommendations = extractSchoolRecommendations(gptMessage) ?? {
@@ -114,7 +133,6 @@
 			second: '',
 			third: ''
 		};
-		console.log(form.body.satData)
 		  // Only attempt to update tableData if satData is not null or undefined
 		  if (form.body.satData) {
 			tableData = [
@@ -223,9 +241,8 @@
 							<FormGroup legendText="Intended Major">
 								<ComboBox
 								  placeholder="Select an intended major"
-								  selectedId="undecided"
 								  name="major"
-								  items={majors}
+								  items={majors} {shouldFilterItem}
 								/>
 							  </FormGroup>
 							<FormGroup legendText="School Size Preference (in # of students)">
