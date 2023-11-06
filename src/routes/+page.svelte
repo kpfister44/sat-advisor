@@ -2,6 +2,8 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { states } from '$lib/states';
 	import {
+		Select,
+		SelectItem,
 		Form,
 		ComboBox,
 		NumberInput,
@@ -48,7 +50,19 @@
 	let tableData: TableRow[] = [];
 
 	// items holds the info from the states array in the format need to be used by the ComboBox component
-	const items = states.map((state, index) => ({ id: index.toString(), text: state }));
+	const stateItems = states.map((state, index) => ({ id: index.toString(), text: state }));
+
+	const majors = [
+		{ id: 'undecided', text: 'Undecided' },
+		{ id: 'computer-science', text: 'Computer Science' },
+		{ id: 'business', text: 'Business' },
+		{ id: 'engineering', text: 'Engineering' },
+		{ id: 'accounting', text: 'Accounting' },
+		{ id: 'teaching', text: 'Teaching' },
+		{ id: 'nursing', text: 'Nursing' },
+		{ id: 'biology', text: 'Biology' },
+		{ id: 'psychology', text: 'Psychology' }
+	];
 
 	function shouldFilterItem(item: { text: string }, value: string): boolean {
 		if (!value) return true;
@@ -58,7 +72,7 @@
 		event.preventDefault();
 		showForm = false; // Hide the form
 	}
-	
+
 	interface schoolRecommendations {
 		first: string;
 		second: string;
@@ -182,7 +196,7 @@
 
 						<Form method="POST">
 							<FormGroup legendText="Location">
-								<ComboBox placeholder="Select a state" name="state" {items} {shouldFilterItem} />
+								<ComboBox placeholder="Select a state" name="state" items={stateItems} {shouldFilterItem} />
 							</FormGroup>
 							<FormGroup legendText="Academic Information">
 								<Slider
@@ -206,11 +220,35 @@
 									label="Overall GPA"
 								/>
 							</FormGroup>
+							<FormGroup legendText="Intended Major">
+								<ComboBox
+								  placeholder="Select an intended major"
+								  selectedId="undecided"
+								  name="major"
+								  items={majors}
+								/>
+							  </FormGroup>
+							<FormGroup legendText="School Size Preference (in # of students)">
+								<RadioButtonGroup name="school-size" selected="medium">
+									<RadioButton id="size-small" value="small" labelText="Small - Less than 5,000" />
+									<RadioButton id="size-medium" value="medium" labelText="Medium - 5,000 to 20,000" />
+									<RadioButton id="size-large" value="large" labelText="Large - More than 20,000" />
+								</RadioButtonGroup>
+							</FormGroup>													
+							<FormGroup legendText="Proximity to Home">
+								<RadioButtonGroup name="proximity-importance" selected="3">
+									<RadioButton id="proximity-1" value="1" labelText="1 - Not important at all" />
+									<RadioButton id="proximity-2" value="2" labelText="2" />
+									<RadioButton id="proximity-3" value="3" labelText="3 - Neutral" />
+									<RadioButton id="proximity-4" value="4" labelText="4" />
+									<RadioButton id="proximity-5" value="5" labelText="5 - Very important in my choice" />
+								</RadioButtonGroup>
+							</FormGroup>							
 							<FormGroup legendText="Financial Aid Importance">
 								<RadioButtonGroup name="financial-aid-importance" selected="3">
 									<RadioButton id="importance-1" value="1" labelText="1 - Not important at all" />
 									<RadioButton id="importance-2" value="2" labelText="2" />
-									<RadioButton id="importance-3" value="3" labelText="3" />
+									<RadioButton id="importance-3" value="3" labelText="3 - Neutral" />
 									<RadioButton id="importance-4" value="4" labelText="4" />
 									<RadioButton
 										id="importance-5"
