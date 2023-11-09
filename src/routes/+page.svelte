@@ -24,7 +24,8 @@
 		Row,
 		Column,
 		Tile,
-		DataTable
+		DataTable,
+		SkeletonPlaceholder
 	} from 'carbon-components-svelte';
 
 
@@ -316,37 +317,45 @@
 				{:else}
 					{#if isLoadingSatData}
 						<!-- Show loading indicator for SAT data -->
-						<p>Loading SAT data...</p>
+						<div class="top-tiles-container">
+							<p>Loading SAT data...</p>
+						</div>
 					{:else if satDataLoaded}
 						<!-- Show the DataTable as soon as SAT data is available -->
-						<Tile>
-							<DataTable
-								sortable
-								headers={[
-								{ key: 'percentile', value: 'Percentile' },
-								{ key: 'score', value: 'Score' },
-								{ key: 'name', value: 'Name' },
-								]}
-								rows={tableData}
-							/>
-						</Tile>
+						<div class="top-tiles-container">
+							<Tile>
+								<DataTable
+									sortable
+									headers={[
+									{ key: 'percentile', value: 'Percentile' },
+									{ key: 'score', value: 'Score' },
+									{ key: 'name', value: 'Name' },
+									]}
+									rows={tableData}
+								/>
+							</Tile>
+						</div>
 						{#if isLoadingOpenAiData}
 							<!-- Show loading indicator for OpenAI data -->
-							<p>Loading OpenAI data...</p>
+							<div class="openai-results-container">
+								<p style="margin:10px">Loading OpenAI data...</p>
+								<SkeletonPlaceholder style="height: 12rem; width: 80vw; margin: 10px" />
+								<SkeletonPlaceholder style="height: 12rem; width: 80vw; margin: 10px" />
+							</div>
 						{:else if openAIDataLoaded}
-							<div class="top-tiles-container">
+							<div class="openai-results-container">
 								<Tile>
 									<h2>Recommended Schools:</h2>
 									<p class="tile-content">{recommendations.first}</p>
 									<p class="tile-content">{recommendations.second}</p>
 									<p class="tile-content">{recommendations.third}</p>
 								</Tile>
+								<!-- This will display once OpenAI advice is available -->
+								<Tile>
+									<h2>Advice</h2>
+									<p class="tile-content">{gptMessage}</p>
+								</Tile>
 							</div>
-							<!-- This will display once OpenAI advice is available -->
-							<Tile>
-								<h2>Advice</h2>
-								<p class="tile-content">{gptMessage}</p>
-							</Tile>
 						{:else}
 							<!-- Handle case when OpenAI data is not loaded and no error has occurred -->
 						{/if}
@@ -367,6 +376,13 @@
 		display: flex;
 		justify-content: center; 
 		flex-wrap: wrap;  
+	}
+	.openai-results-container {
+		display: flex;
+		justify-content: center; 
+		flex-direction: column;
+		flex-wrap: wrap;   
+		min-width: 300px;
 	}
 	.form-flex-container {
 		display: flex;
@@ -403,6 +419,7 @@
 		flex: 1;
 		margin: 10px; 
 		min-width: 300px;
+		overflow: auto;
 	}
 	:global(.bx--tile h2) {
 		margin-bottom: 20px;
