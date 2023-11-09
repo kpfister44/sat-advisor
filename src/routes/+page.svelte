@@ -194,8 +194,8 @@
 
 	// Extracting school recommendations from the GPT message
 	function extractSchoolRecommendations(gptMessage: string): SchoolRecommendations | null {
-		// Regular expression to find patterns like "1 - College Name" or "1: College Name", stopping at a comma, period or the start of a new sentence
-		const recommendationPattern = /(\d) [-:] ([^,.]+[^\s,.])/g;
+		// Regular expression to find patterns like "1 - College Name" or "1: College Name", stopping at a comma, period, colon or the start of a new sentence
+		const recommendationPattern = /(\d) [-:] ([^,:.]+[^\s,:.])/g;
 		let match;
 		const schools: string[] = [];
 
