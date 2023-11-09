@@ -5,11 +5,13 @@ import { OPENAI_API_KEY } from '$env/static/private';
 export interface OpenAIResponse {
 	index: number;
 	message: {
-		role: string;
-		content: string | null;
+	  role: string;
+	  content: string | null;
 	};
 	finish_reason: string;
 }
+  
+
 
 export async function makeOpenAIRequest(userMessage: string) {
 	const openai = new OpenAI({ apiKey: OPENAI_API_KEY });

@@ -1,5 +1,8 @@
 <script lang="ts">
-	import type { PageServerData, ActionData } from './$types';
+	import type { PageServerData } from './$types';
+	import { enhance } from '$app/forms';
+	import type { OpenAIResponse } from '$lib/server/api';
+	import { invalidateAll } from '$app/navigation';
 	import { states } from '$lib/states';
 	import {
 		// Importing UI components from Carbon
@@ -24,13 +27,14 @@
 		DataTable
 	} from 'carbon-components-svelte';
 
-	// Props passed from the server
-	export let data: PageServerData;
-	export let form: ActionData;
 
 	// UI state variables
 	let showForm = true;
 	let isSideNavOpen = false;
+	let isLoadingSatData = false;
+  	let satDataLoaded = false;
+	let isLoadingOpenAiData = false;
+	let openAIDataLoaded = false;
 
 	// API response state
 	let gptMessage: string = '';
@@ -48,6 +52,17 @@
 		third: ''
 	};
 
+	// Define a type for the SAT data
+	type SatData = {
+		total_score: number;
+		nat_rep_percentile: string;
+		user_percentile: string;
+	};
+	interface ExtendedSatData {
+		exact: SatData | null;
+		higher: SatData | null;
+		lower: SatData | null;
+	}
 	// Interface for table rows representing SAT score data
 	interface TableRow {
 		id: string;
@@ -91,9 +106,90 @@
 	}
 
 	// Form submission handling
-	function handleSubmit(event: Event): void {
+	async function handleSubmit(event: Event) {
 		event.preventDefault();
 		showForm = false; // Hide the form
+		isLoadingOpenAiData = true; // Set loading to true to show the loading indicator
+
+		// Construct the form data object from your inputs
+		const formData = new FormData(event.target as HTMLFormElement);
+  
+		try {
+			isLoadingSatData = true;
+			// Fetch SAT data first
+			const satResponse = await fetch('/sat-data', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!satResponse.ok) {
+				throw new Error(`Error fetching SAT data: ${satResponse.statusText}`);
+			}
+
+			const response = await satResponse.json(); // This is { satData: { ... } }
+			updateSatDataUI(response); // Pass the whole response
+			isLoadingSatData = false;
+			satDataLoaded = true;
+
+			const openaiResponse = await fetch('/sat-advice', {
+			method: 'POST',
+			body: formData
+			});
+
+			if (!openaiResponse.ok) {
+			throw new Error(`Error from server: ${openaiResponse.statusText}`);
+			}
+
+			// Inside your try block, after receiving the OpenAI API response
+			const openAiResponse = await openaiResponse.json(); // This should be the full response object
+			updateOpenAIDataUI(openAiResponse); // Pass the full response to the update function
+			isLoadingOpenAiData = false; // Hide the loading indicator once the data is received
+			openAIDataLoaded = true;
+
+		} catch (error) {
+			console.error('Failed to submit form:', error);
+			isLoadingOpenAiData = false; // Ensure loading is false if there's an error
+			// Handle error state here, e.g., show an error message to the user
+		}
+	}
+
+	function updateSatDataUI(satDataResponse: { satData: ExtendedSatData }) {
+  		const { satData } = satDataResponse; // Now satData has the correct structure
+		tableData = [
+			{
+			id: 'above-user-score', 
+			percentile: satData.higher?.user_percentile ?? 'Unavailable',
+			score: satData.higher?.total_score?.toString() ?? 'N/A',
+			name: ''
+			},
+			{
+			id: 'user', 
+			percentile: satData.exact?.user_percentile ?? 'Unavailable',
+			score: satData.exact?.total_score?.toString() ?? 'N/A',
+			name: 'Your SAT Score'
+			},
+			{
+			id: 'below-user-score', 
+			percentile: satData.lower?.user_percentile ?? 'Unavailable',
+			score: satData.lower?.total_score?.toString() ?? 'N/A',
+			name: '',
+			}
+		]
+	}	
+	function updateOpenAIDataUI(openAiDataResponse: { openAiResponse: OpenAIResponse }) {
+		const { openAiResponse } = openAiDataResponse;
+		if (openAiResponse && openAiResponse.message) {
+			gptMessage = openAiResponse.message.content || '';
+			recommendations = extractSchoolRecommendations(gptMessage) ?? {
+			first: '',
+			second: '',
+			third: ''
+			};
+			// Update the UI with the recommendations here
+		} else {
+			console.error('Unexpected structure for OpenAI data:', openAiDataResponse);
+			// Handle this case, perhaps by showing an error message
+		}
 	}
 
 	// Extracting school recommendations from the GPT message
@@ -123,68 +219,6 @@
 		};
 	}
 
-	// Reactive statement to handle form submission results
-	$: if (form?.status === 200) {
-		// Update UI based on successful submission
-		showForm = false;
-		gptMessage = form.body?.apiResponse?.message?.content ?? '';
-		recommendations = extractSchoolRecommendations(gptMessage) ?? {
-			first: '',
-			second: '',
-			third: ''
-		};
-		  // Only attempt to update tableData if satData is not null or undefined
-		  if (form.body.satData) {
-			tableData = [
-				{
-				id: 'above-user-score', 
-				percentile: form.body.satData.higher?.user_percentile ?? 'Unavailable',
-				score: form.body.satData.higher?.total_score?.toString() ?? 'N/A',
-				name: ''
-				},
-				{
-				id: 'user', 
-				percentile: form.body.satData.exact?.user_percentile ?? 'Unavailable',
-				score: form.body.satData.exact?.total_score?.toString() ?? 'N/A',
-				name: 'Your SAT Score'
-				},
-				{
-				id: 'below-user-score', 
-				percentile: form.body.satData.lower?.user_percentile ?? 'Unavailable',
-				score: form.body.satData.lower?.total_score?.toString() ?? 'N/A',
-				name: '',
-				}
-				// ... Additional entries for the average scores of recommended schools
-			// {
-			// 	id: 'school-one-average-score', 
-			// 	percentile: form.body.satData.user_percentile,
-			// 	score: form.body.satData.total_score.toString()
-			// },
-			// {
-			// 	id: 'school-two-average-score', 
-			// 	percentile: form.body.satData.user_percentile,
-			// 	score: form.body.satData.total_score.toString()
-			// },
-			// {
-			// 	id: 'school-three-average-score', 
-			// 	percentile: form.body.satData.user_percentile,
-			// 	score: form.body.satData.total_score.toString()
-			// }
-			];
-		} else {
-			// Display a default message if satData is null
-			tableData = [
-				{
-					id: 'default',
-					name: 'N/A',
-					percentile: 'Data unavailable',
-					score: 'N/A'
-				}
-        	];
-		}
-	}
-
-
 </script>
 
 <Header company="Pfister Corp." platformName="SAT Assistant" bind:isSideNavOpen>
@@ -212,7 +246,7 @@
 							<h1>College Assistant Tool</h1>
 						</div>
 
-						<Form method="POST">
+						<Form on:submit={handleSubmit}>
 							<FormGroup legendText="Location">
 								<ComboBox placeholder="Select a state" name="state" items={stateItems} {shouldFilterItem} />
 							</FormGroup>
@@ -246,10 +280,10 @@
 								/>
 							  </FormGroup>
 							<FormGroup legendText="School Size Preference (in # of students)">
-								<RadioButtonGroup name="school-size" selected="medium">
-									<RadioButton id="size-small" value="small" labelText="Small - Less than 5,000" />
-									<RadioButton id="size-medium" value="medium" labelText="Medium - 5,000 to 20,000" />
-									<RadioButton id="size-large" value="large" labelText="Large - More than 20,000" />
+								<RadioButtonGroup name="school-size" selected="medium (5000 to 20000 students)">
+									<RadioButton id="size-small" value="small (less than 5000 students)" labelText="Small - Less than 5,000" />
+									<RadioButton id="size-medium" value="medium (5000 to 20000 students)" labelText="Medium - 5,000 to 20,000" />
+									<RadioButton id="size-large" value="large (more than 200000 students)" labelText="Large - More than 20,000" />
 								</RadioButtonGroup>
 							</FormGroup>													
 							<FormGroup legendText="Proximity to Home">
@@ -280,30 +314,44 @@
 						</Form>
 					</div>
 				{:else}
-					{#if form?.status === 200}
-						<div class="top-tiles-container">
-							<Tile>
-								<h2>Recommended Schools:</h2>
-								<p class="tile-content">{recommendations.first}</p>
-								<p class="tile-content">{recommendations.second}</p>
-								<p class="tile-content">{recommendations.third}</p>
-							</Tile>
-							<Tile>
-								<DataTable
-									sortable
-									headers={[
-										{ key: 'percentile', value: 'Percentile' },
-										{ key: 'score', value: 'Score' },
-										{ key: 'name', value: 'Name' },
-									]}
-									rows={tableData}
-								/>
-							</Tile>
-						</div>
+					{#if isLoadingSatData}
+						<!-- Show loading indicator for SAT data -->
+						<p>Loading SAT data...</p>
+					{:else if satDataLoaded}
+						<!-- Show the DataTable as soon as SAT data is available -->
 						<Tile>
-							<h2>Advice</h2>
-							<p class="tile-content">{gptMessage}</p>
+							<DataTable
+								sortable
+								headers={[
+								{ key: 'percentile', value: 'Percentile' },
+								{ key: 'score', value: 'Score' },
+								{ key: 'name', value: 'Name' },
+								]}
+								rows={tableData}
+							/>
 						</Tile>
+						{#if isLoadingOpenAiData}
+							<!-- Show loading indicator for OpenAI data -->
+							<p>Loading OpenAI data...</p>
+						{:else if openAIDataLoaded}
+							<div class="top-tiles-container">
+								<Tile>
+									<h2>Recommended Schools:</h2>
+									<p class="tile-content">{recommendations.first}</p>
+									<p class="tile-content">{recommendations.second}</p>
+									<p class="tile-content">{recommendations.third}</p>
+								</Tile>
+							</div>
+							<!-- This will display once OpenAI advice is available -->
+							<Tile>
+								<h2>Advice</h2>
+								<p class="tile-content">{gptMessage}</p>
+							</Tile>
+						{:else}
+							<!-- Handle case when OpenAI data is not loaded and no error has occurred -->
+						{/if}
+					{:else}
+						<!-- Handle error state or when satData is not loaded -->
 					{/if}
 				{/if}
 			</Column>
