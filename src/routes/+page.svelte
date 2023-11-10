@@ -108,49 +108,66 @@
 
 	// Form submission handling
 	async function handleSubmit(event: Event) {
+		// Prevent the default form submission behavior
 		event.preventDefault();
-		showForm = false; // Hide the form
-		isLoadingOpenAiData = true; // Set loading to true to show the loading indicator
 
-		// Construct the form data object from your inputs
+		// Hide the form and start loading OpenAI data
+		showForm = false;
+		isLoadingOpenAiData = true;
+
+		// Construct the form data object from the form inputs
 		const formData = new FormData(event.target as HTMLFormElement);
   
 		try {
+			// Start loading SAT data
 			isLoadingSatData = true;
-			// Fetch SAT data first
+
+			// Make a POST request to the /sat-data endpoint with the form data
 			const satResponse = await fetch('/sat-data', {
 				method: 'POST',
 				body: formData
 			});
 
+			// If the response is not ok, throw an error
 			if (!satResponse.ok) {
 				throw new Error(`Error fetching SAT data: ${satResponse.statusText}`);
 			}
 
-			const response = await satResponse.json(); // This is { satData: { ... } }
-			updateSatDataUI(response); // Pass the whole response
+			// Parse the response data as JSON
+			const response = await satResponse.json();
+
+			// Update the UI with the SAT data
+			updateSatDataUI(response);
+
+			// Stop loading SAT data and mark it as loaded
 			isLoadingSatData = false;
 			satDataLoaded = true;
 
+			// Make a POST request to the /sat-advice endpoint with the form data
 			const openaiResponse = await fetch('/sat-advice', {
-			method: 'POST',
-			body: formData
+				method: 'POST',
+				body: formData
 			});
 
+			// If the response is not ok, throw an error
 			if (!openaiResponse.ok) {
-			throw new Error(`Error from server: ${openaiResponse.statusText}`);
+				throw new Error(`Error from server: ${openaiResponse.statusText}`);
 			}
 
-			// Inside your try block, after receiving the OpenAI API response
-			const openAiResponse = await openaiResponse.json(); // This should be the full response object
-			updateOpenAIDataUI(openAiResponse); // Pass the full response to the update function
-			isLoadingOpenAiData = false; // Hide the loading indicator once the data is received
+			// Parse the OpenAI API response data as JSON
+			const openAiResponse = await openaiResponse.json();
+
+			// Update the UI with the OpenAI data
+			updateOpenAIDataUI(openAiResponse);
+
+			// Stop loading OpenAI data and mark it as loaded
+			isLoadingOpenAiData = false;
 			openAIDataLoaded = true;
 
 		} catch (error) {
+			// Log the error and stop loading OpenAI data if an error occurs
 			console.error('Failed to submit form:', error);
-			isLoadingOpenAiData = false; // Ensure loading is false if there's an error
-			// Handle error state here, e.g., show an error message to the user
+			isLoadingOpenAiData = false;
 		}
 	}
 
