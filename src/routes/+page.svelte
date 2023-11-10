@@ -217,16 +217,16 @@
 	function updateOpenAIDataUI(openAiDataResponse: { openAiResponse: OpenAIResponse }) {
 		const { openAiResponse } = openAiDataResponse;
 		if (openAiResponse && openAiResponse.message) {
+			// Store the content of the message in gptMessage
 			gptMessage = openAiResponse.message.content || '';
+			// Look through the gptMessage to extract the three school recommendations
 			recommendations = extractSchoolRecommendations(gptMessage) ?? {
 			first: '',
 			second: '',
 			third: ''
 			};
-			// Update the UI with the recommendations here
 		} else {
 			console.error('Unexpected structure for OpenAI data:', openAiDataResponse);
-			// Handle this case, perhaps by showing an error message
 		}
 	}
 
