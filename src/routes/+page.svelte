@@ -111,7 +111,7 @@
 		// Prevent the default form submission behavior
 		event.preventDefault();
 
-		// Hide the form and start loading OpenAI data
+		// Hide the form and start the UI for loading OpenAI data
 		showForm = false;
 		isLoadingOpenAiData = true;
 
@@ -160,7 +160,7 @@
 			// Update the UI with the OpenAI data
 			updateOpenAIDataUI(openAiResponse);
 
-			// Stop loading OpenAI data and mark it as loaded
+			// Stop the UI for loading OpenAI data and mark it as loaded
 			isLoadingOpenAiData = false;
 			openAIDataLoaded = true;
 
