@@ -171,6 +171,16 @@
 		}
 	}
 
+	/**
+	 * Updates the UI with the SAT data received from the server.
+	 *
+	 * This function takes the SAT data response from the server, extracts the relevant data,
+	 * and updates the UI state variables to reflect this data. This includes updating the table
+	 * data to show the user's SAT score, as well as scores 100 points higher and lower.
+	 *
+	 * @param {object} satDataResponse - The response from the server containing the SAT data.
+	 * @param {object} satDataResponse.satData - The SAT data for the user's score, and scores 100 points higher and lower.
+	 */
 	function updateSatDataUI(satDataResponse: { satData: ExtendedSatData }) {
   		const { satData } = satDataResponse; // Now satData has the correct structure
 		tableData = [
@@ -194,6 +204,16 @@
 			}
 		]
 	}	
+	/**
+	 * Updates the UI with the OpenAI data received from the server.
+	 *
+	 * This function takes the OpenAI data response from the server, extracts the relevant data,
+	 * and updates the UI state variables to reflect this data. This includes updating the GPT message
+	 * and the school recommendations based on the OpenAI response.
+	 *
+	 * @param {object} openAiDataResponse - The response from the server containing the OpenAI data.
+	 * @param {object} openAiDataResponse.openAiResponse - The OpenAI data for the user's college recommendations.
+	 */
 	function updateOpenAIDataUI(openAiDataResponse: { openAiResponse: OpenAIResponse }) {
 		const { openAiResponse } = openAiDataResponse;
 		if (openAiResponse && openAiResponse.message) {
