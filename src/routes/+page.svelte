@@ -258,32 +258,30 @@
 	}
 
 </script>
-
-<Header company="Pfister Corp." platformName="SAT Assistant" bind:isSideNavOpen>
-	<svelte:fragment slot="skip-to-content">
-		<SkipToContent />
-	</svelte:fragment>
-	<HeaderNav>
-		<HeaderNavItem href="/" text="Link 1" />
-		<HeaderNavItem href="/" text="Link 2" />
-		<HeaderNavItem href="/" text="Link 3" />
-		<HeaderNavMenu text="Menu">
+<header>
+	<Header company="Pfister Corp." platformName="SAT Assistant" bind:isSideNavOpen>
+		<svelte:fragment slot="skip-to-content">
+			<SkipToContent />
+		</svelte:fragment>
+		<HeaderNav>
 			<HeaderNavItem href="/" text="Link 1" />
 			<HeaderNavItem href="/" text="Link 2" />
 			<HeaderNavItem href="/" text="Link 3" />
-		</HeaderNavMenu>
-	</HeaderNav>
-</Header>
-<Content>
-	<Grid>
-		<Row>
-			<Column>
-				{#if showForm}
-					<div class="form-flex-container dark-bg">
-						<div class="title-container">
-							<h1>College Assistant Tool</h1>
-						</div>
-
+			<HeaderNavMenu text="Menu">
+				<HeaderNavItem href="/" text="Link 1" />
+				<HeaderNavItem href="/" text="Link 2" />
+				<HeaderNavItem href="/" text="Link 3" />
+			</HeaderNavMenu>
+		</HeaderNav>
+	</Header>
+</header>
+<main>
+	<Content class="dark-bg">
+		{#if showForm}
+			<section id="landing-form">
+				<div class="form-wrapper container">
+					<h1>College Assistant Tool</h1>
+					<div class="input-form">
 						<Form on:submit={handleSubmit}>
 							<FormGroup legendText="Location">
 								<ComboBox placeholder="Select a state" name="state" items={stateItems} {shouldFilterItem} />
@@ -294,8 +292,6 @@
 									name="satScore"
 									min={400}
 									max={1600}
-									maxLabel="1600"
-									fullWidth
 									value={1000}
 									step={10}
 								/>
@@ -312,37 +308,38 @@
 							</FormGroup>
 							<FormGroup legendText="Intended Major">
 								<ComboBox
-								  placeholder="Select an intended major"
-								  name="major"
-								  items={majors} {shouldFilterItem}
+									placeholder="Select an intended major"
+									name="major"
+									items={majors} {shouldFilterItem}
 								/>
-							  </FormGroup>
+								</FormGroup>
 							<FormGroup legendText="School Size Preference (in # of students)">
-								<RadioButtonGroup name="school-size" selected="medium (5000 to 20000 students)">
+								<RadioButtonGroup orientation="vertical" name="school-size" selected="no preference">
+									<RadioButton id="no-preference" value="no preference" labelText="No Preference" />
 									<RadioButton id="size-small" value="small (less than 5000 students)" labelText="Small - Less than 5,000" />
 									<RadioButton id="size-medium" value="medium (5000 to 20000 students)" labelText="Medium - 5,000 to 20,000" />
 									<RadioButton id="size-large" value="large (more than 200000 students)" labelText="Large - More than 20,000" />
 								</RadioButtonGroup>
 							</FormGroup>													
 							<FormGroup legendText="Proximity to Home">
-								<RadioButtonGroup name="proximity-importance" selected="3">
-									<RadioButton id="proximity-1" value="1" labelText="1 - Not important at all" />
+								<RadioButtonGroup orientation="vertical" name="proximity-importance" selected="3">
+									<RadioButton id="proximity-1" value="1" labelText="1 - Not a Factor in Decision" />
 									<RadioButton id="proximity-2" value="2" labelText="2" />
-									<RadioButton id="proximity-3" value="3" labelText="3 - Neutral" />
+									<RadioButton id="proximity-3" value="3" labelText="3" />
 									<RadioButton id="proximity-4" value="4" labelText="4" />
-									<RadioButton id="proximity-5" value="5" labelText="5 - Very important in my choice" />
+									<RadioButton id="proximity-5" value="5" labelText="5 - Key Factor in Decision" />
 								</RadioButtonGroup>
 							</FormGroup>							
 							<FormGroup legendText="Financial Aid Importance">
-								<RadioButtonGroup name="financial-aid-importance" selected="3">
-									<RadioButton id="importance-1" value="1" labelText="1 - Not important at all" />
+								<RadioButtonGroup orientation="vertical" name="financial-aid-importance" selected="3">
+									<RadioButton id="importance-1" value="1" labelText="1 - Not a Factor in Decision" />
 									<RadioButton id="importance-2" value="2" labelText="2" />
-									<RadioButton id="importance-3" value="3" labelText="3 - Neutral" />
+									<RadioButton id="importance-3" value="3" labelText="3" />
 									<RadioButton id="importance-4" value="4" labelText="4" />
 									<RadioButton
 										id="importance-5"
 										value="5"
-										labelText="5 - Very important in my choice"
+										labelText="5 - Key Factor in Decision"
 									/>
 								</RadioButtonGroup>
 							</FormGroup>
@@ -351,68 +348,154 @@
 							</div>
 						</Form>
 					</div>
-				{:else}
-					{#if isLoadingSatData}
-						<!-- Show loading indicator for SAT data -->
-						<div class="top-tiles-container">
-							<p>Loading SAT data...</p>
+				</div>
+			</section>
+		{:else}
+			{#if isLoadingSatData}
+				<section id="sat-loading">
+					<!-- Show loading indicator for SAT data -->
+					<div class="container">
+						<p>Loading SAT data...</p>
+					</div>
+				</section>
+			{:else if satDataLoaded}
+				<section id="results-percentile">
+					<!-- Show the DataTable as soon as SAT data is available -->
+					<div class="percentiles-chart container">
+						<Tile>
+							<DataTable
+								sortable
+								headers={[
+								{ key: 'percentile', value: 'Percentile' },
+								{ key: 'score', value: 'Score' },
+								{ key: 'name', value: 'Name' },
+								]}
+								rows={tableData}
+							/>
+						</Tile>
+					</div>
+				</section>
+				{#if isLoadingOpenAiData}
+					<section id="openai-loading">
+						<!-- Show loading indicator for OpenAI data -->
+						<div class="container">
+							<p style="margin:10px">Loading OpenAI data...</p>
+							<SkeletonPlaceholder style="height: 12rem; width: 100%; margin: 10px auto" />
+							<SkeletonPlaceholder style="height: 12rem; width: 100%; margin: 10px auto" />
 						</div>
-					{:else if satDataLoaded}
-						<!-- Show the DataTable as soon as SAT data is available -->
-						<div class="top-tiles-container">
+					</section>
+				{:else if openAIDataLoaded}
+					<section id=results-openai>
+						<div class="container">
 							<Tile>
-								<DataTable
-									sortable
-									headers={[
-									{ key: 'percentile', value: 'Percentile' },
-									{ key: 'score', value: 'Score' },
-									{ key: 'name', value: 'Name' },
-									]}
-									rows={tableData}
-								/>
+								<h3>Recommended Schools:</h3>
+								<p class="tile-content">{recommendations.first}</p>
+								<p class="tile-content">{recommendations.second}</p>
+								<p class="tile-content">{recommendations.third}</p>
+							</Tile>
+							<!-- This will display once OpenAI advice is available -->
+							<Tile>
+								<h3>Advice</h3>
+								<p class="tile-content">{gptMessage}</p>
 							</Tile>
 						</div>
-						{#if isLoadingOpenAiData}
-							<!-- Show loading indicator for OpenAI data -->
-							<div class="openai-results-container">
-								<p style="margin:10px">Loading OpenAI data...</p>
-								<SkeletonPlaceholder style="height: 12rem; width: 80vw; margin: 10px" />
-								<SkeletonPlaceholder style="height: 12rem; width: 80vw; margin: 10px" />
-							</div>
-						{:else if openAIDataLoaded}
-							<div class="openai-results-container">
-								<Tile>
-									<h2>Recommended Schools:</h2>
-									<p class="tile-content">{recommendations.first}</p>
-									<p class="tile-content">{recommendations.second}</p>
-									<p class="tile-content">{recommendations.third}</p>
-								</Tile>
-								<!-- This will display once OpenAI advice is available -->
-								<Tile>
-									<h2>Advice</h2>
-									<p class="tile-content">{gptMessage}</p>
-								</Tile>
-							</div>
-						{:else}
-							<!-- Handle case when OpenAI data is not loaded and no error has occurred -->
-						{/if}
-					{:else}
-						<!-- Handle error state or when satData is not loaded -->
-					{/if}
+					</section>
+				{:else}
+					<!-- Handle case when OpenAI data is not loaded and no error has occurred -->
 				{/if}
-			</Column>
-		</Row>
-	</Grid>
+			{:else}
+				<!-- Handle error state or when satData is not loaded -->
+			{/if}
+		{/if}
 </Content>
+</main>
+<footer>
+	<section id="footer">
+		<div class="footer container dark-bg">
+			<p>Kyle Pfister, 2023</p>
+		</div>
+	</section>
+</footer>
 
 <style>
+	h1 {
+		display: block;
+		text-align: center;
+	}
+	h3 {
+		font-size: 22px;
+		margin-top: 10px;
+		margin-bottom: 10px;
+	}
+	p {
+		display: block;
+		margin: auto;
+		padding: 0 10px;
+		width: 100%;
+		max-width: 600px;
+	}
+	:global(.bx--content) {
+		padding: 0rem;
+	}
+	:global(.bx--form-item) {
+		width: 100%;
+		margin: auto;
+		display: block;
+	}
+	.container {
+		padding: 0 10px;
+		margin: auto;
+		position: relative;
+		width: 100%;
+		max-width: 450px;
+	}
+	.footer {
+		margin-top: 20px;
+	}
+	.form-wrapper {
+		margin-top: 48px;
+	}
+	.input-form {
+		margin-top: 20px;
+	}
+	@media (min-width: 400px) {
+		header, main, footer {
+			padding: 2rem;
+		}
+		/* additional tablet-specific styles */
+	}
+	@media (min-width: 568px) {
+		header, main, footer {
+			padding: 2rem;
+		}
+		/* additional tablet-specific styles */
+	}
+	/* Media query for tablets */
+	@media (min-width: 768px) {
+		header, main, footer {
+			padding: 2rem;
+		}
+		/* additional tablet-specific styles */
+	}
+
+	/* Media query for desktops */
+	@media (min-width: 1024px) {
+		header, main, footer {
+			padding: 3rem;
+		}
+		/* additional desktop-specific styles */
+	}
+	@media (min-width: 1300px) {
+		header, main, footer {
+			padding: 2rem;
+		}
+		/* additional tablet-specific styles */
+	}
 	.title-container {
 		margin: 15px;
 	}
-	.top-tiles-container {
-		display: flex;
-		justify-content: center; 
-		flex-wrap: wrap;  
+	.percentiles-chart {
+		margin-top: 48px; 
 	}
 	.openai-results-container {
 		display: flex;
@@ -446,6 +529,9 @@
 	:global(.bx--slider-text-input) {
 		width: 5rem;
 	}
+	:global(.bx--slider) {
+		min-width: 10rem;
+	}
 	:global(.bx--col) {
 		display: flex;
 		justify-content: center;
@@ -454,7 +540,7 @@
 	}
 	:global(.bx--tile) {
 		flex: 1;
-		margin: 10px; 
+		margin: 10px 0px; 
 		min-width: 300px;
 		overflow: auto;
 	}
@@ -465,6 +551,6 @@
 		background-color: #282828;
 	}
 	.tile-content {
-		line-height: 1.6;
+		line-height: 1.8em;
 	}
 </style>
