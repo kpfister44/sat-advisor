@@ -88,7 +88,9 @@ async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSAT
             }
 
             const query = 'SELECT * FROM college_scores WHERE college_name = ?';
-            db.get(query, [collegeName], (err, row) => {
+            type DatabaseRow = CollegeSATData | null;
+
+            db.get(query, [collegeName], (err, row: DatabaseRow) => {
                 db.close();
                 if (err) {
                     console.error('Query Error:', err.message);
