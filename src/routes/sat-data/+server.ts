@@ -123,9 +123,10 @@ export const POST: RequestHandler = async ({ request }) => {
     }
   };
 
-export const GET: RequestHandler = async ({ query }) => {
+export const POST_COLLEGE: RequestHandler = async ({ request }) => {
     try {
-      const collegeName = query.get('collegeName');
+      const body = await request.json();
+      const collegeName = body.collegeName;
       if (!collegeName) {
         return json({ error: 'Missing college name' }, { status: 400 });
       }
@@ -133,7 +134,7 @@ export const GET: RequestHandler = async ({ query }) => {
       const collegeData = await getCollegeAdmissionsData(collegeName);
       return json({ collegeData });
     } catch (error) {
-      console.error('Error processing query:', error);
+      console.error('Error processing request:', error);
       return json({ error: 'Server error occurred' }, { status: 500 });
     }
   };
