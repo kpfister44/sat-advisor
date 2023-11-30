@@ -122,4 +122,19 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ error: 'Server error occurred' }, { status: 500 });
     }
   };
+
+export const GET: RequestHandler = async ({ query }) => {
+    try {
+      const collegeName = query.get('collegeName');
+      if (!collegeName) {
+        return json({ error: 'Missing college name' }, { status: 400 });
+      }
+  
+      const collegeData = await getCollegeAdmissionsData(collegeName);
+      return json({ collegeData });
+    } catch (error) {
+      console.error('Error processing query:', error);
+      return json({ error: 'Server error occurred' }, { status: 500 });
+    }
+  };
   
