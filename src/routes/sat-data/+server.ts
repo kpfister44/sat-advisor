@@ -72,7 +72,13 @@ async function getSatData(totalScore: number): Promise<ExtendedSatData | null> {
 	});
 };
 
-async function getCollegeAdmissionsData(collegeName: string): Promise<any> {
+type CollegeSATData = {
+    percentile_25th: number;
+    percentile_50th: number;
+    percentile_75th: number;
+};
+
+async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSATData | null> {
     return new Promise((resolve, reject) => {
         const db = new Database('./db/mydb.sqlite', (dbErr) => {
             if (dbErr) {
