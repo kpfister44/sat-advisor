@@ -72,6 +72,29 @@ async function getSatData(totalScore: number): Promise<ExtendedSatData | null> {
 	});
 };
 
+async function getCollegeAdmissionsData(collegeName: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const db = new Database('./db/mydb.sqlite', (dbErr) => {
+            if (dbErr) {
+                console.error('Connection Error:', dbErr.message);
+                reject(dbErr);
+                return;
+            }
+
+            const query = 'SELECT * FROM college_scores WHERE college_name = ?';
+            db.get(query, [collegeName], (err, row) => {
+                db.close();
+                if (err) {
+                    console.error('Query Error:', err.message);
+                    reject(err);
+                    return;
+                }
+                resolve(row);
+            });
+        });
+    });
+};
+
 export const POST: RequestHandler = async ({ request }) => {
     try {
       // Use formData() for multipart form data
