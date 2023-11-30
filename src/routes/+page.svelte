@@ -117,6 +117,26 @@
 
 		// Construct the form data object from the form inputs
 		const formData = new FormData(event.target as HTMLFormElement);
+
+		// Add a test college name to the form data
+		formData.append('collegeName', 'Test College');
+
+		// Make a POST request to the /college-data endpoint with the form data
+		const collegeDataResponse = await fetch('/college-data', {
+			method: 'POST',
+			body: formData
+		});
+
+		// If the response is not ok, throw an error
+		if (!collegeDataResponse.ok) {
+			throw new Error(`Error fetching college data: ${collegeDataResponse.statusText}`);
+		}
+
+		// Parse the response data as JSON
+		const collegeData = await collegeDataResponse.json();
+
+		// Log the college data to the console
+		console.log('College data:', collegeData);
   
 		try {
 			// Start loading SAT data
