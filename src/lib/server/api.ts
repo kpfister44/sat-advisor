@@ -20,7 +20,7 @@ export async function makeOpenAIRequest(userMessage: string) {
 		messages: [
 			{
 				role: 'system',
-				content: 'You are an AI acting as a college-career counselor. Provide three school recommendations based on the students criteria. List each recommendation clearly and concisely, using the format: "1 - [School Name], 2 - [School Name], 3 - [School Name]," and ensure the recommendations are suitable for the students profile. Your response should be exactly 256 tokens long.'
+				content: 'You are an AI acting as a college-career counselor. Provide three school recommendations based on the students criteria. List each recommendation clearly and concisely, using the format: "1 - [School Name], 2 - [School Name], 3 - [School Name]," and ensure the recommendations are suitable for the students profile. Make sure the college name is the full, formal college name. For example, instead of 1 - University of Alabama, you would format it as 1 - University of Alabama at Birmingham. Your response should be exactly 256 tokens long.'
 			},
 			{ role: 'user', content: userMessage }
 		],

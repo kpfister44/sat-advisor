@@ -4,9 +4,10 @@ import { json } from '@sveltejs/kit';
 import { Database } from 'sqlite3';
 
 type CollegeSATData = {
-    percentile_25th: number;
-    percentile_50th: number;
-    percentile_75th: number;
+    college_name: string;
+    sat_25th_percentile: number | null;
+    sat_50th_percentile: number | null;
+    sat_75th_percentile: number | null;
 };
 
 async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSATData | null> {
@@ -36,17 +37,43 @@ async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSAT
 
 export const POST: RequestHandler = async ({ request }) => {
     try {
-      const body = await request.json();
-      const collegeName = body.collegeName;
-      if (!collegeName) {
-        return json({ error: 'Missing college name' }, { status: 400 });
-      }
-  
-      const collegeData = await getCollegeAdmissionsData(collegeName);
-      return json({ collegeData });
+        const body = await request.json();
+        // Destructure the first, second, and third college names from the body
+        const { first, second, third } = body;
+
+        // If any of the college names are missing, return an error
+        if (!first || !second || !third) {
+            return json({ error: 'Missing college name' }, { status: 400 });
+        }
+
+        // Create an array of the college names
+        const collegeNames = [first, second, third];
+        // Map each college name to a promise that resolves to its admissions data
+        const collegeDataPromises = collegeNames.map(collegeName => getCollegeAdmissionsData(collegeName));
+        // Wait for all the promises to settle
+        const collegeDataResults = await Promise.allSettled(collegeDataPromises);
+
+        const collegeData = collegeDataResults.reduce((acc, result, index) => {
+            const key = ['first', 'second', 'third'][index];
+            if (result.status === 'fulfilled' && result.value) {
+                acc[key] = result.value;
+            } else {
+                acc[key] = {
+                    college_name: collegeNames[index],
+                    sat_25th_percentile: null,
+                    sat_50th_percentile: null,
+                    sat_75th_percentile: null
+                };
+            }
+            return acc;
+        }, {} as Record<string, CollegeSATData>);
+        console.log(collegeData)
+        // Return the college data as a JSON response
+        return json({ collegeData });
     } catch (error) {
-      console.error('Error processing request:', error);
-      return json({ error: 'Server error occurred' }, { status: 500 });
+        // Log any errors that occur and return a server error response
+        console.error('Error processing request:', error);
+        return json({ error: 'Server error occurred' }, { status: 500 });
     }
 };
   

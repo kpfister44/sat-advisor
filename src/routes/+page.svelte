@@ -117,26 +117,6 @@
 
 		// Construct the form data object from the form inputs
 		const formData = new FormData(event.target as HTMLFormElement);
-
-		// Add a test college name to the form data
-		formData.append('collegeName', 'Test College');
-
-		// Make a POST request to the /college-data endpoint with the form data
-		const collegeDataResponse = await fetch('/college-data', {
-			method: 'POST',
-			body: formData
-		});
-
-		// If the response is not ok, throw an error
-		if (!collegeDataResponse.ok) {
-			throw new Error(`Error fetching college data: ${collegeDataResponse.statusText}`);
-		}
-
-		// Parse the response data as JSON
-		const collegeData = await collegeDataResponse.json();
-
-		// Log the college data to the console
-		console.log('College data:', collegeData);
   
 		try {
 			// Start loading SAT data
@@ -183,6 +163,25 @@
 			// Stop the UI for loading OpenAI data and mark it as loaded
 			isLoadingOpenAiData = false;
 			openAIDataLoaded = true;
+
+			if (openAIDataLoaded) {
+				// Make a POST request to the /college-data endpoint with the form data
+				const collegeDataResponse = await fetch('/college-data', {
+					method: 'POST',
+					body: JSON.stringify(recommendations)
+				});
+
+				// If the response is not ok, throw an error
+				if (!collegeDataResponse.ok) {
+					throw new Error(`Error fetching college data: ${collegeDataResponse.statusText}`);
+				}
+
+				// Parse the response data as JSON
+				const collegeData = await collegeDataResponse.json();
+
+				// Update the table rows with the new college data
+				updateTableData(collegeData);
+			}
 
 		} catch (error) {
 			// Log the error and stop loading OpenAI data if an error occurs
@@ -250,6 +249,39 @@
 		}
 	}
 
+	function updateTableData(collegeData: any) {
+		// Extract the SAT percentiles for each college
+		const firstCollege = collegeData.collegeData.first;
+		const secondCollege = collegeData.collegeData.second;
+		const thirdCollege = collegeData.collegeData.third;
+
+		// Create new table rows for each college
+		const firstCollegeRow: TableRow = {
+			id: 'first-college',
+			percentile: '',
+			score: firstCollege.sat_50th_percentile.toString(),
+			name: firstCollege.college_name
+		};
+		const secondCollegeRow: TableRow = {
+			id: 'second-college',
+			percentile: '',
+			score: secondCollege.sat_50th_percentile.toString(),
+			name: secondCollege.college_name
+		};
+		const thirdCollegeRow: TableRow = {
+			id: 'third-college',
+			percentile: '',
+			score: secondCollege.sat_50th_percentile.toString(),
+			name: thirdCollege.college_name
+		};
+
+		// Add the new rows to tableData
+		tableData.push(firstCollegeRow, secondCollegeRow, thirdCollegeRow);
+
+		// Force Svelte to update the component
+		tableData = [...tableData];
+	}
+
 	// Extracting school recommendations from the GPT message
 	function extractSchoolRecommendations(gptMessage: string): SchoolRecommendations | null {
 		// Regular expression to find patterns like "1 - College Name" or "1: College Name", stopping at a comma, period, colon or the start of a new sentence
@@ -261,7 +293,8 @@
 		while ((match = recommendationPattern.exec(gptMessage)) !== null) {
 			// Add the college name (second part of the match) to the schools array
 			// Trim and remove any trailing periods or commas
-			schools.push(match[0].trim().replace(/[,.]$/, ''));
+			// Also remove the number and dash in front of the school name
+			schools.push(match[2].trim().replace(/[,.]$/, ''));
 		}
 
 		// If fewer than three colleges were found, return null
