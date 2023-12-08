@@ -20,9 +20,6 @@
 		HeaderNavMenu,
 		SkipToContent,
 		Content,
-		Grid,
-		Row,
-		Column,
 		Tile,
 		DataTable,
 		SkeletonPlaceholder
@@ -251,27 +248,28 @@
 
 	function updateTableData(collegeData: any) {
 		// Extract the SAT percentiles for each college
-		const firstCollege = collegeData.collegeData.first;
-		const secondCollege = collegeData.collegeData.second;
-		const thirdCollege = collegeData.collegeData.third;
+		console.log(collegeData)
+		const firstCollege = collegeData.collegeData[0].first;
+		const secondCollege = collegeData.collegeData[1].second;
+		const thirdCollege = collegeData.collegeData[2].third;
 
 		// Create new table rows for each college
 		const firstCollegeRow: TableRow = {
 			id: 'first-college',
-			percentile: '',
-			score: firstCollege.sat_50th_percentile.toString(),
+			percentile: firstCollege.percentile,
+			score: firstCollege.sat_50th_percentile?.toString() ?? 'N/A',
 			name: firstCollege.college_name
 		};
 		const secondCollegeRow: TableRow = {
 			id: 'second-college',
-			percentile: '',
-			score: secondCollege.sat_50th_percentile.toString(),
+			percentile: secondCollege.percentile,
+			score: secondCollege.sat_50th_percentile?.toString() ?? 'N/A',
 			name: secondCollege.college_name
 		};
 		const thirdCollegeRow: TableRow = {
 			id: 'third-college',
-			percentile: '',
-			score: secondCollege.sat_50th_percentile.toString(),
+			percentile: thirdCollege.percentile,
+			score: thirdCollege.sat_50th_percentile?.toString() ?? 'N/A',
 			name: thirdCollege.college_name
 		};
 
@@ -418,10 +416,12 @@
 						<Tile>
 							<DataTable
 								sortable
+								title="SAT Scores"
+  								description="Your SAT score in comparison to other schools and scores."
 								headers={[
-								{ key: 'percentile', value: 'Percentile' },
-								{ key: 'score', value: 'Score' },
 								{ key: 'name', value: 'Name' },
+								{ key: 'score', value: 'Score' },
+								{ key: 'percentile', value: 'Percentile' }
 								]}
 								rows={tableData}
 							/>
@@ -479,13 +479,13 @@
 		font-size: 22px;
 		margin-top: 10px;
 		margin-bottom: 10px;
+		padding: 0 16px;
 	}
 	p {
 		display: block;
 		margin: auto;
-		padding: 0 10px;
+		padding: 0 16px;
 		width: 100%;
-		max-width: 600px;
 	}
 	:global(.bx--content) {
 		padding: 0rem;
@@ -500,7 +500,7 @@
 		margin: auto;
 		position: relative;
 		width: 100%;
-		max-width: 450px;
+		max-width: 1000px;
 	}
 	.footer {
 		margin-top: 20px;
@@ -510,6 +510,46 @@
 	}
 	.input-form {
 		margin-top: 20px;
+	}
+	.percentiles-chart {
+		margin-top: 48px; 
+	}
+	.submit-button-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	:global(.bx--btn) {
+		text-align: center;
+		padding: 15px 45px;
+		border-radius: 10px;
+	}
+	:global(.bx--slider-text-input) {
+		width: 5rem;
+	}
+	:global(.bx--slider) {
+		min-width: 10rem;
+	}
+	:global(.bx--col) {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column; 
+	}
+	:global(.bx--tile) {
+		flex: 1;
+		margin: 10px 0px; 
+		min-width: 300px;
+		overflow: auto;
+	}
+	:global(.bx--tile h2) {
+		margin-bottom: 20px;
+	}
+	.dark-bg {
+		background-color: #282828;
+	}
+	.tile-content {
+		line-height: 1.8em;
 	}
 	@media (min-width: 400px) {
 		header, main, footer {
@@ -543,67 +583,5 @@
 			padding: 2rem;
 		}
 		/* additional tablet-specific styles */
-	}
-	.title-container {
-		margin: 15px;
-	}
-	.percentiles-chart {
-		margin-top: 48px; 
-	}
-	.openai-results-container {
-		display: flex;
-		justify-content: center; 
-		flex-direction: column;
-		flex-wrap: wrap;   
-		min-width: 300px;
-	}
-	.form-flex-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 70vh;
-		min-width: 50vw;
-		margin: 0;
-		padding: 20px;
-		flex-direction: column;
-		border-radius: 5px;
-		box-sizing: border-box;
-	}
-	.submit-button-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	:global(.bx--btn) {
-		text-align: center;
-		padding: 15px 45px;
-		border-radius: 10px;
-	}
-	:global(.bx--slider-text-input) {
-		width: 5rem;
-	}
-	:global(.bx--slider) {
-		min-width: 10rem;
-	}
-	:global(.bx--col) {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		flex-direction: column; /* if you want to center vertically as well */
-	}
-	:global(.bx--tile) {
-		flex: 1;
-		margin: 10px 0px; 
-		min-width: 300px;
-		overflow: auto;
-	}
-	:global(.bx--tile h2) {
-		margin-bottom: 20px;
-	}
-	.dark-bg {
-		background-color: #282828;
-	}
-	.tile-content {
-		line-height: 1.8em;
 	}
 </style>

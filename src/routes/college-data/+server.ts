@@ -3,12 +3,24 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { Database } from 'sqlite3';
 
+// Define a type for the SAT data
+type SatData = {
+    total_score: number;
+    nat_rep_percentile: string;
+    user_percentile: string;
+  };
+
 type CollegeSATData = {
     college_name: string;
-    sat_25th_percentile: number | null;
-    sat_50th_percentile: number | null;
-    sat_75th_percentile: number | null;
-};
+    sat_25th_percentile: number;
+    sat_50th_percentile: number;
+    sat_75th_percentile: number;
+    percentile: string; 
+}
+
+type percentileData = {
+    percentile: string | null;
+}
 
 async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSATData | null> {
     return new Promise((resolve, reject) => {
@@ -35,43 +47,80 @@ async function getCollegeAdmissionsData(collegeName: string): Promise<CollegeSAT
     });
 };
 
+async function getpercentileData(totalScore: number): Promise<percentileData | null> {
+    const roundedScore = Math.round(totalScore / 10) * 10;
+	return new Promise((resolve, reject) => {
+		const db = new Database('./db/mydb.sqlite', (dbErr) => {
+			if (dbErr) {
+				console.error('Connection Error:', dbErr.message);
+				reject(dbErr);
+				return;
+			}
+            // Prepare the final result object
+            const result: percentileData = { percentile: null };
+
+            // Query for the exact SAT data
+            const percentileQuery = 'SELECT * FROM sat_scores WHERE total_score = ?';
+            console.log(`Running perceentile query with score: ${totalScore}`);
+            db.get(percentileQuery, [roundedScore], (exactErr, exactRow: SatData | undefined) => {
+                if (exactErr) {
+                console.error('Percentile Error:', exactErr.message);
+                db.close();
+                reject(exactErr);
+                return;
+                }
+                if (exactRow) {
+                    result.percentile = exactRow.nat_rep_percentile || null;
+                }
+
+                // Resolve the promise with all the gathered data
+                console.log(result)
+                resolve(result);
+            });
+        });
+    });
+};
+
 export const POST: RequestHandler = async ({ request }) => {
     try {
         const body = await request.json();
-        // Destructure the first, second, and third college names from the body
         const { first, second, third } = body;
 
-        // If any of the college names are missing, return an error
         if (!first || !second || !third) {
             return json({ error: 'Missing college name' }, { status: 400 });
         }
 
-        // Create an array of the college names
         const collegeNames = [first, second, third];
-        // Map each college name to a promise that resolves to its admissions data
         const collegeDataPromises = collegeNames.map(collegeName => getCollegeAdmissionsData(collegeName));
-        // Wait for all the promises to settle
         const collegeDataResults = await Promise.allSettled(collegeDataPromises);
 
-        const collegeData = collegeDataResults.reduce((acc, result, index) => {
+        const collegeData = await Promise.all(collegeDataResults.map(async (result, index) => {
             const key = ['first', 'second', 'third'][index];
+            let collegeSATData: CollegeSATData;
             if (result.status === 'fulfilled' && result.value) {
-                acc[key] = result.value;
+                collegeSATData = result.value;
             } else {
-                acc[key] = {
+                collegeSATData = {
                     college_name: collegeNames[index],
-                    sat_25th_percentile: null,
-                    sat_50th_percentile: null,
-                    sat_75th_percentile: null
+                    sat_25th_percentile: 0,
+                    sat_50th_percentile: 0,
+                    sat_75th_percentile: 0,
+                    percentile: 'N/A'
                 };
             }
-            return acc;
-        }, {} as Record<string, CollegeSATData>);
+
+            // Fetch the percentile data for the college's SAT 50th percentile score
+            if (collegeSATData.sat_50th_percentile !== 0) {
+                // Round the 50th percentile score to the nearest whole number so the db query works as expected
+                const percentileData = await getpercentileData(collegeSATData.sat_50th_percentile);
+                collegeSATData = { ...collegeSATData, percentile: percentileData?.percentile || 'N/A' };
+            }
+            return { [key]: collegeSATData };
+        }));
+
         console.log(collegeData)
-        // Return the college data as a JSON response
         return json({ collegeData });
     } catch (error) {
-        // Log any errors that occur and return a server error response
         console.error('Error processing request:', error);
         return json({ error: 'Server error occurred' }, { status: 500 });
     }
