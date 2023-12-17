@@ -327,10 +327,10 @@
 	</Header>
 </header>
 <main>
-	<Content class="dark-bg">
+	<Content>
 		{#if showForm}
 			<section id="landing-form">
-				<div class="form-wrapper container">
+				<div class="form-wrapper container light-bg">
 					<h1>College Assistant Tool</h1>
 					<div class="input-form">
 						<Form on:submit={handleSubmit}>
@@ -395,7 +395,7 @@
 								</RadioButtonGroup>
 							</FormGroup>
 							<div class="submit-button-container">
-								<Button type="submit">Submit</Button>
+								<Button kind="secondary" type="submit">Submit</Button>
 							</div>
 						</Form>
 					</div>
@@ -507,6 +507,10 @@
 	}
 	.form-wrapper {
 		margin-top: 48px;
+		border-radius: 5px;
+		filter: drop-shadow(2px 2px 4px rgba(33, 33, 33, 0.3));
+		padding-top: 20px;
+		padding-bottom: 20px;
 	}
 	.input-form {
 		margin-top: 20px;
@@ -545,8 +549,8 @@
 	:global(.bx--tile h2) {
 		margin-bottom: 20px;
 	}
-	.dark-bg {
-		background-color: #282828;
+	.light-bg {
+		background-color: #F2F2F2;
 	}
 	.tile-content {
 		line-height: 1.8em;
